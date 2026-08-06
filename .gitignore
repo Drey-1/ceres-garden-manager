@@ -25,6 +25,7 @@ build/
 !.env.sample
 
 *.db
+apps/api/generated/prisma
 *.db-journal
 *.sqlite
 *.sqlite-journal
