@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String
+  createdAt     DateTime       @default(now())
+  beds          Bed[]
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Bed {
+  id        String     @id @default(uuid())
+  name      String
+  location  String?
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  plantings Planting[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+enum PlantingStatus {
+  ACTIVE
+  FINISHED
+}
+
+model Planting {
+  id                       String         @id @default(uuid())
+  species                  String
+  plantedAt                DateTime
+  wateringFrequencyDays    Int
+  fertilizingFrequencyDays Int
+  estimatedDaysToHarvest   Int
+  status                   PlantingStatus @default(ACTIVE)
+  bedId                    String
+  bed                      Bed            @relation(fields: [bedId], references: [id])
+  careLogs                 CareLog[]
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+}
+
+enum CareType {
+  WATER
+  FERTILIZE
+  HARVEST
+}
+
+model CareLog {
+  id         String   @id @default(uuid())
+  type       CareType
+  quantity   Int?
+  plantingId String
+  planting   Planting @relation(fields: [plantingId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
