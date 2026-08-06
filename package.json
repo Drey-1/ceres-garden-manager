@@ -1,0 +1,24 @@
+{
+  "name": "ceres-garden-manager",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Drey-1/ceres-garden-manager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Drey-1/ceres-garden-manager/issues"
+  },
+  "homepage": "https://github.com/Drey-1/ceres-garden-manager#readme",
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.7"
+  }
+}
