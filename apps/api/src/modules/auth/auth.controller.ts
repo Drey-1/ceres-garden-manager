@@ -121,3 +121,34 @@ export async function refresh(req: Request, res: Response) {
 		return res.status(500).json({ error: "Internal server error." });
 	}
 }
+
+export async function logout(req: Request, res: Response) {
+	const { refreshToken } = req.body;
+	if (!refreshToken) {
+		return res.status(400).json({ error: "No refresh token provided." });
+	}
+
+	try {
+		const storedRefresh = await prisma.refreshToken.findUnique({
+			where: { token: refreshToken },
+		});
+		if(storedRefresh?.userId !== req.userId) {
+			return res.status(200).json({ message: "Token is logged out." });
+		}
+		if (!storedRefresh || storedRefresh.revoked) {
+			return res.status(200).json({ message: "Token is logged out." });
+		}
+		if (storedRefresh.expiresAt < new Date()) {
+			return res.status(200).json({ message: "Token is logged out." });
+		}
+
+		await prisma.refreshToken.update({
+			where: { token: refreshToken },
+			data: { revoked: true },
+		});
+		return res.status(200).json({ message: "Token is logged out." });
+	} catch (err: any) {
+		console.error(err);
+		return res.status(500).json({ error: "Internal server error." });
+	}
+}
