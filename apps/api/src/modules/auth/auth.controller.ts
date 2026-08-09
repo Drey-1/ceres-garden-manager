@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 import { Prisma } from "../../../generated/prisma/client.js";
 import { prisma } from "../../prisma.js";
 import {
@@ -68,6 +69,54 @@ export async function login(req: Request, res: Response) {
 
 		res.status(200).json({ accessToken, refreshToken });
 	} catch (err: any) {
+		console.error(err);
+		return res.status(500).json({ error: "Internal server error." });
+	}
+}
+
+export async function refresh(req: Request, res: Response) {
+	const { refreshToken } = req.body;
+	if (!refreshToken) {
+		return res.status(400).json({ error: "No refresh token provided." });
+	}
+
+	try {
+		const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!);
+		if (decoded === undefined || decoded.sub === undefined) {
+			return res.status(401).json({ error: "Invalid payload." });
+		}
+
+		const storedRefresh = await prisma.refreshToken.findUnique({
+			where: { token: refreshToken },
+		});
+		if (!storedRefresh || storedRefresh.revoked) {
+			return res.status(401).json({ error: "Invalid token." });
+		}
+		if (storedRefresh.expiresAt < new Date()) {
+			return res.status(401).json({ error: "Expired token." });
+		}
+
+		const newAccessToken = generateAccessToken(decoded.sub as string);
+		const newRefreshToken = generateRefreshToken(decoded.sub as string);
+
+		await prisma.refreshToken.update({
+			where: { token: refreshToken },
+			data: { revoked: true },
+		});
+
+		await storeRefreshToken(decoded.sub as string, newRefreshToken);
+
+		return res
+			.status(200)
+			.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+	} catch (err: any) {
+		if (err.name === "JsonWebTokenError") {
+			return res.status(401).json({ error: "Invalid token." });
+		}
+
+		if (err.name === "TokenExpiredError") {
+			return res.status(401).json({ error: "Expired token." });
+		}
 		console.error(err);
 		return res.status(500).json({ error: "Internal server error." });
 	}
