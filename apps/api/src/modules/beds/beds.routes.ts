@@ -9,9 +9,9 @@ import {
 
 const router = Router();
 
-router.get("/", createBedController);
+router.get("/", getAllBeds);
 
-router.post("/", getAllBeds);
+router.post("/", createBedController);
 
 router.get("/:id", getBed);
 
