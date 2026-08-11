@@ -1,3 +1,4 @@
+import { NotFoundError } from "../../errors.js";
 import { prisma } from "../../prisma.js";
 import type { CreatePlantingPayload } from "../../types/CreatePlantingPayload.js";
 import type { UpdatePlantingPayload } from "../../types/UpdatePlantingPayload.js";
@@ -5,7 +6,7 @@ import { getBedById } from "../beds/beds.service.js";
 
 async function confirmHolderBed(userId: string, bedId: string) {
 	const bedHolder = await getBedById(userId, bedId);
-	if (!bedHolder) throw new Error("Bed not found.");
+	if (!bedHolder) throw new NotFoundError("Bed not found.");
 }
 
 export async function createPlanting(
