@@ -2,6 +2,7 @@ import express from "express";
 import requireAuth from "./modules/auth/auth.middleware.js";
 import { router as authRoutes } from "./modules/auth/auth.routes.js";
 import { router as bedsRoutes } from "./modules/beds/beds.routes.js";
+import { router as careLogsRouter } from "./modules/care-logs/care-logs.routes.js";
 import {
 	bedPlantingsRouter,
 	plantingRouter,
@@ -18,5 +19,7 @@ app.use("/beds", requireAuth, bedsRoutes);
 app.use("/beds", requireAuth, bedPlantingsRouter);
 
 app.use("/plantings", requireAuth, plantingRouter);
+
+app.use("/plantings", requireAuth, careLogsRouter);
 
 export { app };
