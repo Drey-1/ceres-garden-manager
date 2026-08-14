@@ -7,6 +7,7 @@ import {
 	bedPlantingsRouter,
 	plantingRouter,
 } from "./modules/plantings/plantings.routes.js";
+import { router as todayRouter } from "./modules/today/today.routes.js";
 
 const app = express();
 
@@ -21,5 +22,7 @@ app.use("/beds", requireAuth, bedPlantingsRouter);
 app.use("/plantings", requireAuth, plantingRouter);
 
 app.use("/plantings", requireAuth, careLogsRouter);
+
+app.use("/today", requireAuth, todayRouter);
 
 export { app };
