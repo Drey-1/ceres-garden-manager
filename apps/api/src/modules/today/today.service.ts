@@ -2,7 +2,7 @@ import { prisma } from "../../prisma.js";
 import type { PendingCareType } from "../../types/PendingCareType.js";
 import { toDateOnly } from "../../utils/toDateOnly.js";
 
-function calculateNextCareDate(lastCareDate: Date, frequencyDays: number) {
+export function calculateNextCareDate(lastCareDate: Date, frequencyDays: number) {
 	const lastCareDateMs = lastCareDate.getTime();
 	const frequencyDaysMs = frequencyDays * 24 * 60 * 60 * 1000;
 	const nextCareDate = new Date(lastCareDateMs + frequencyDaysMs);
@@ -10,7 +10,7 @@ function calculateNextCareDate(lastCareDate: Date, frequencyDays: number) {
 	return nextCareDate;
 }
 
-function getLastCareDate(
+export function getLastCareDate(
 	planting: {
 		plantedAt: Date;
 		careLogs: { type: string; createdAt: Date }[];
@@ -27,7 +27,7 @@ function getLastCareDate(
 	return latestCareLog.createdAt;
 }
 
-function isCarePending(
+export function isCarePending(
 	planting: {
 		plantedAt: Date;
 		careLogs: { type: string; createdAt: Date }[];
@@ -41,7 +41,7 @@ function isCarePending(
 	return toDateOnly(nextCareDate) <= toDateOnly(nowDate);
 }
 
-function isHarvestReady(planting: {
+export function isHarvestReady(planting: {
 	plantedAt: Date;
 	estimatedDaysToHarvest: number;
 }) {
@@ -54,7 +54,7 @@ function isHarvestReady(planting: {
 	return toDateOnly(estimatedDateToHarvest) <= toDateOnly(nowDate);
 }
 
-function getPendingActions(planting: {
+export function getPendingActions(planting: {
 	plantedAt: Date;
 	estimatedDaysToHarvest: number;
 	wateringFrequencyDays: number;
