@@ -67,7 +67,14 @@ export async function login(req: Request, res: Response) {
 
 		await storeRefreshToken(user.id, refreshToken);
 
-		res.status(200).json({ accessToken, refreshToken });
+		res.cookie("refreshToken", refreshToken, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === "production",
+			sameSite: "strict",
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		});
+
+		res.status(200).json({ accessToken });
 	} catch (err: any) {
 		console.error(err);
 		return res.status(500).json({ error: "Internal server error." });
@@ -75,7 +82,7 @@ export async function login(req: Request, res: Response) {
 }
 
 export async function refresh(req: Request, res: Response) {
-	const { refreshToken } = req.body;
+	const refreshToken = req.cookies.refreshToken;
 	if (!refreshToken) {
 		return res.status(400).json({ error: "No refresh token provided." });
 	}
@@ -106,9 +113,14 @@ export async function refresh(req: Request, res: Response) {
 
 		await storeRefreshToken(decoded.sub as string, newRefreshToken);
 
-		return res
-			.status(200)
-			.json({ accessToken: newAccessToken, refreshToken: newRefreshToken });
+		res.cookie("refreshToken", newRefreshToken, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === "production",
+			sameSite: "strict",
+			maxAge: 7 * 24 * 60 * 60 * 1000,
+		});
+
+		return res.status(200).json({ accessToken: newAccessToken });
 	} catch (err: any) {
 		if (err.name === "JsonWebTokenError") {
 			return res.status(401).json({ error: "Invalid token." });
@@ -123,7 +135,7 @@ export async function refresh(req: Request, res: Response) {
 }
 
 export async function logout(req: Request, res: Response) {
-	const { refreshToken } = req.body;
+	const refreshToken = req.cookies.refreshToken;
 	if (!refreshToken) {
 		return res.status(400).json({ error: "No refresh token provided." });
 	}
@@ -132,7 +144,7 @@ export async function logout(req: Request, res: Response) {
 		const storedRefresh = await prisma.refreshToken.findUnique({
 			where: { token: refreshToken },
 		});
-		if(storedRefresh?.userId !== req.userId) {
+		if (storedRefresh?.userId !== req.userId) {
 			return res.status(200).json({ message: "Token is logged out." });
 		}
 		if (!storedRefresh || storedRefresh.revoked) {
@@ -146,6 +158,9 @@ export async function logout(req: Request, res: Response) {
 			where: { token: refreshToken },
 			data: { revoked: true },
 		});
+
+		res.clearCookie("refreshToken")
+
 		return res.status(200).json({ message: "Token is logged out." });
 	} catch (err: any) {
 		console.error(err);
