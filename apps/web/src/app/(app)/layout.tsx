@@ -4,7 +4,7 @@ import { CalendarCheckIcon, LandPlotIcon, LogOutIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { apiFetch, getAccessToken, setAccessToken } from "@/lib/apiClient";
+import { apiFetch, getAccessToken, refreshSession, setAccessToken } from "@/lib/apiClient";
 
 export default function AuthenticatedLayout({ children }: LayoutProps<"/">) {
 	const router = useRouter();
@@ -32,8 +32,7 @@ export default function AuthenticatedLayout({ children }: LayoutProps<"/">) {
 			if (!accessToken) {
 				setIsLoading(true);
 				try {
-					const response = await apiFetch("/auth/refresh", { method: "POST" });
-					const newAccessToken = response.accessToken;
+					const newAccessToken = await refreshSession();
 					setAccessToken(newAccessToken);
 					setAccessTokenState(newAccessToken);
 				} catch (err: any) {
@@ -48,7 +47,7 @@ export default function AuthenticatedLayout({ children }: LayoutProps<"/">) {
 	}, [accessToken, router]);
 
 	return (
-		<div className="flex flex-col-reverse md:flex-row h-screen">
+		<div className="flex flex-col-reverse md:flex-row h-screen bg-olive-300">
 			<aside className="bg-[#6AA27D] px-6 py-4 w-screen md:w-auto md:h-screen rounded-t-2xl md:rounded-r-2xl md:rounded-t-none">
 				<p className="hidden md:block items-center text-3xl font-bold text-center border-b py-4 border-white">
 					CERES

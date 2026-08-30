@@ -10,6 +10,44 @@ export function setAccessToken(token: string | null) {
 	currentAccessToken = token;
 }
 
+let refreshTokenPromise: Promise<string> | null = null;
+
+async function performRefresh() {
+	const refreshResponse = await fetch(BASE_URL + "/auth/refresh", {
+		method: "POST",
+		credentials: "include",
+		headers: { "Content-Type": "application/json" },
+	});
+
+	if (!refreshResponse.ok) {
+		setAccessToken(null);
+		throw new Error("The user is logged out");
+	}
+
+	const data = await refreshResponse.json();
+	const newToken = data.accessToken;
+
+	if (!newToken) {
+		setAccessToken(null);
+		throw new Error("The user is logged out");
+	}
+
+	setAccessToken(newToken);
+	return newToken;
+}
+
+export function refreshSession() {
+	if (refreshTokenPromise) {
+		return refreshTokenPromise;
+	}
+
+	refreshTokenPromise = performRefresh().finally(() => {
+		refreshTokenPromise = null;
+	});
+
+	return refreshTokenPromise;
+}
+
 export async function apiFetch(path: string, options?: RequestInit) {
 	const url = BASE_URL + path;
 
@@ -28,37 +66,22 @@ export async function apiFetch(path: string, options?: RequestInit) {
 	});
 
 	if (response.status === 401) {
-		const refreshResponse = await fetch(BASE_URL + "/auth/refresh", {
-			method: "POST",
-			credentials: "include",
-			headers: { "Content-Type": "application/json" },
-		});
+		try {
+			const newToken = await refreshSession();
 
-		if (!refreshResponse.ok) {
-			setAccessToken(null);
-			throw new Error("The user is logged out");
+			const retryHeaders: HeadersInit = {
+				...headers,
+				Authorization: `Bearer ${newToken}`,
+			};
+
+			response = await fetch(url, {
+				...options,
+				headers: retryHeaders,
+				credentials: "include",
+			});
+		} catch (err: any) {
+			throw err
 		}
-
-		const data = await refreshResponse.json();
-		const newToken = data.accessToken;
-
-		if (!newToken) {
-			setAccessToken(null);
-			throw new Error("The user is logged out");
-		}
-
-		setAccessToken(newToken);
-
-		const retryHeaders: HeadersInit = {
-			...headers,
-			Authorization: `Bearer ${currentAccessToken}`,
-		};
-
-		response = await fetch(url, {
-			...options,
-			headers: retryHeaders,
-			credentials: "include",
-		});
 	}
 
 	if (!response.ok) {
