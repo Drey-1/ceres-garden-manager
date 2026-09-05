@@ -104,7 +104,7 @@ export default function Beds() {
 				<form action="" onSubmit={handleBedCreation}>
 					<fieldset
 						disabled={isBedCreationPending}
-						className="disabled:opacity-50 min-w-84 flex flex-col gap-6  p-4"
+						className="disabled:opacity-50 flex flex-col gap-6  p-4"
 					>
 						<input
 							type="text"
