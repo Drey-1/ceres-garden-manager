@@ -5,14 +5,12 @@ import type { CreatePlantingPayload } from "@/types/CreatePlantingPayload";
 export const useCreatePlanting = (bedId: string) => {
 	const queryClient = useQueryClient();
 
-	const { mutate: createPlanting } = useMutation({
+	const { mutate: createPlanting, isPending: isCreatingPlanting } = useMutation({
 		mutationFn: async (payload: CreatePlantingPayload) => {
-			const data = await apiFetch(`/beds/${bedId}/plantings`, {
+			await apiFetch(`/beds/${bedId}/plantings`, {
 				method: "POST",
 				body: JSON.stringify(payload),
 			});
-
-			return data;
 		},
 
 		onSuccess: () => {
@@ -25,5 +23,5 @@ export const useCreatePlanting = (bedId: string) => {
 		},
 	});
 
-	return { createPlanting };
+	return { createPlanting, isCreatingPlanting };
 };
