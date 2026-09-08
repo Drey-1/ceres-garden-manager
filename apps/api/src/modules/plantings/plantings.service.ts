@@ -15,10 +15,12 @@ export async function createPlanting(
 	data: CreatePlantingPayload,
 ) {
 	await confirmHolderBed(userId, bedId);
+	const {plantedAt, ...rest} = data
 	return await prisma.planting.create({
 		data: {
 			bedId,
-			...data,
+			...rest,
+			plantedAt: new Date(plantedAt)
 		},
 	});
 }
