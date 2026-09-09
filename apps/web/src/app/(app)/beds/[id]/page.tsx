@@ -2,24 +2,29 @@
 
 import { EllipsisIcon, PlusIcon, SquarePenIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Dialog from "@/components/Dialog";
+import FomrInput from "@/components/FormInput";
 import { useBed } from "@/hooks/useBed";
 import { useCreatePlanting } from "@/hooks/useCreatePlanting";
+import { useDeleteBed } from "@/hooks/useDeleteBed";
 import { usePlantings } from "@/hooks/usePlantings";
 import { useUpdateBed } from "@/hooks/useUpdateBed";
 
 export default function Bed() {
+	const router = useRouter();
 	const params: { id: string } = useParams();
 	const { bed, isBedPending, isBedError } = useBed(params.id);
 	const { plantings, isPlantingsPending, isPlantingsError } = usePlantings(
 		params.id,
 	);
 	const { updateBed, isUpdatingBed } = useUpdateBed(params.id);
+	const { deleteBed, isDeletingBed } = useDeleteBed(params.id);
 	const { createPlanting, isCreatingPlanting } = useCreatePlanting(params.id);
 
 	const [isBedEditOpen, setIsBedEditOpen] = useState(false);
+	const [isBedDeleteOpen, setIsBedDeleteOpen] = useState(false);
 	const [isPlantCreatOpen, setIsPlantCreatOpen] = useState(false);
 
 	const [bedName, setBedName] = useState("");
@@ -42,6 +47,10 @@ export default function Bed() {
 		setIsBedEditOpen(!isBedEditOpen);
 	};
 
+	const toggleBedDelete = () => {
+		setIsBedDeleteOpen(!isBedDeleteOpen);
+	};
+
 	const togglePlantCreat = () => {
 		setIsPlantCreatOpen(!isPlantCreatOpen);
 	};
@@ -59,6 +68,14 @@ export default function Bed() {
 				},
 			},
 		);
+	};
+
+	const handleBedDelete = () => {
+		deleteBed(undefined, {
+			onSuccess: () => {
+				router.push("/beds");
+			},
+		});
 	};
 
 	const handlePlantingCreation = (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -140,6 +157,7 @@ export default function Bed() {
 					</button>
 					<button
 						type="button"
+						onClick={toggleBedDelete}
 						className="flex justify-center bg-red-500 w-full md:h-full p-4 cursor-pointer hover:brightness-90 active:brightness-120 "
 					>
 						<TrashIcon className="size-8" />
@@ -302,6 +320,32 @@ export default function Bed() {
 						</button>
 					</fieldset>
 				</form>
+			</Dialog>
+			<Dialog
+				isOpen={isBedDeleteOpen}
+				onClose={toggleBedDelete}
+				title="Delete Bed"
+			>
+				<p className="max-w-72">
+					Are you sure that you want to delete your bed? All data will be
+					irreversibly lost.
+				</p>
+				<fieldset disabled={isDeletingBed} className="flex w-full gap-2 border-t-2 pt-2 border-gray-300">
+					<button
+						type="button"
+						onClick={toggleBedDelete}
+						className="p-2 text-gray-800 w-full  hover:text-white text-lg font-bold border-2 border-gray-400 hover:bg-gray-500 active:brightness-110 rounded transition-colors"
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						onClick={handleBedDelete}
+						className="p-2 text-white w-full text-lg font-bold  bg-red-500 hover:brightness-80 active:brightness-110 rounded transition-colors"
+					>
+						Delete
+					</button>
+				</fieldset>
 			</Dialog>
 		</main>
 	);
