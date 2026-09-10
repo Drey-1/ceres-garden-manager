@@ -3,14 +3,50 @@
 import { EllipsisIcon, PlusIcon, SquarePenIcon, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Dialog from "@/components/Dialog";
-import FomrInput from "@/components/FormInput";
+import FormInput from "@/components/FormInput";
 import { useBed } from "@/hooks/useBed";
 import { useCreatePlanting } from "@/hooks/useCreatePlanting";
 import { useDeleteBed } from "@/hooks/useDeleteBed";
 import { usePlantings } from "@/hooks/usePlantings";
 import { useUpdateBed } from "@/hooks/useUpdateBed";
+import type { PlantingType } from "@/types/PlantingType";
+
+const PlantingCard = ({
+	planting,
+	isFinished,
+}: {
+	planting: PlantingType;
+	isFinished: boolean;
+}) => {
+	return (
+		<div className="flex items-center gap-4 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform group">
+			<div>
+				<p>
+					<span className="text-2xl font-semibold text-[#6BA37E]">
+						{planting.species}
+					</span>{" "}
+					planted at{" "}
+					<span className="text-lg text-blue-900">
+						{planting?.createdAt
+							? new Date(planting.createdAt).toLocaleDateString()
+							: ""}
+					</span>
+				</p>
+			</div>
+			<Link
+				href={`/plantings/${planting.id}`}
+				className="border-2 h-max border-dashed rounded-2xl p-1 opacity-40 group-hover:opacity-100 cursor-pointer"
+			>
+				<EllipsisIcon />
+			</Link>
+			{isFinished && (
+				<span className="text-2xl text-gray-500 font-bold">FINISHED</span>
+			)}
+		</div>
+	);
+};
 
 export default function Bed() {
 	const router = useRouter();
@@ -27,8 +63,8 @@ export default function Bed() {
 	const [isBedDeleteOpen, setIsBedDeleteOpen] = useState(false);
 	const [isPlantCreatOpen, setIsPlantCreatOpen] = useState(false);
 
-	const [bedName, setBedName] = useState("");
-	const [bedLocation, setBedLocation] = useState("");
+	const [bedName, setBedName] = useState(bed?.name);
+	const [bedLocation, setBedLocation] = useState(bed?.location);
 
 	const [species, setSpecies] = useState("");
 	const [plantedAt, setPlantedAt] = useState("");
@@ -59,12 +95,10 @@ export default function Bed() {
 		e.preventDefault();
 
 		updateBed(
-			{ name: bedName, location: bedLocation },
+			{ name: bedName, location: bedLocation as string | undefined },
 			{
 				onSuccess: () => {
 					toggleBedEdit();
-					setBedName("");
-					setBedLocation("");
 				},
 			},
 		);
@@ -101,6 +135,11 @@ export default function Bed() {
 			},
 		);
 	};
+
+	useEffect(() => {
+		setBedName(bed?.name);
+		setBedLocation(bed?.location);
+	},[bed]);
 
 	if (isBedPending || isPlantingsPending) {
 		return (
@@ -169,32 +208,22 @@ export default function Bed() {
 				<h2 className="text-2xl text-white font-semibold text-shadow-md">
 					All plantings:
 				</h2>
-				{plantings.map((planting) => {
+				{activePlantings.map((planting) => {
 					return (
-						<div
+						<PlantingCard
 							key={planting.id}
-							className="flex items-center gap-4 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform group"
-						>
-							<div>
-								<p>
-									<span className="text-2xl font-semibold text-[#6BA37E]">
-										{planting.species}
-									</span>{" "}
-									planted at{" "}
-									<span className="text-lg text-blue-900">
-										{planting?.createdAt
-											? new Date(planting.createdAt).toLocaleDateString()
-											: ""}
-									</span>
-								</p>
-							</div>
-							<Link
-								href={`/plantings/${planting.id}`}
-								className="border-2 h-max border-dashed rounded-2xl p-1 opacity-40 group-hover:opacity-100 cursor-pointer"
-							>
-								<EllipsisIcon />
-							</Link>
-						</div>
+							planting={planting}
+							isFinished={false}
+						/>
+					);
+				})}
+				{finishedPlantings.map((planting) => {
+					return (
+						<PlantingCard
+							key={planting.id}
+							planting={planting}
+							isFinished={true}
+						/>
 					);
 				})}
 				<button
@@ -214,7 +243,7 @@ export default function Bed() {
 						disabled={isUpdatingBed}
 						className="disabled:opacity-50 flex flex-col gap-6  p-4"
 					>
-						<input
+						<FormInput
 							type="text"
 							placeholder="Bed Name:"
 							required
@@ -222,16 +251,14 @@ export default function Bed() {
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 								setBedName(e.target.value);
 							}}
-							className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
 						/>
-						<input
+						<FormInput
 							type="text"
 							placeholder="Bed Location:"
 							value={bedLocation}
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 								setBedLocation(e.target.value);
 							}}
-							className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2 disabled:opacity-50 disabled:outline-0"
 						/>
 						<button
 							type="submit"
@@ -252,7 +279,7 @@ export default function Bed() {
 						disabled={isCreatingPlanting}
 						className="disabled:opacity-50 flex flex-col gap-6  p-4"
 					>
-						<input
+						<FormInput
 							type="text"
 							placeholder="Species:"
 							required
@@ -260,58 +287,43 @@ export default function Bed() {
 							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 								setSpecies(e.target.value);
 							}}
-							className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
 						/>
-						<label className="flex flex-col">
-							Planted At:
-							<input
-								type="date"
-								required
-								value={plantedAt}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-									setPlantedAt(e.target.value);
-								}}
-								onClick={(e) => e.currentTarget.showPicker()}
-								className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
-							/>
-						</label>
-						<label className="flex flex-col">
-							Watering Frequency in Days:
-							<input
-								type="number"
-								required
-								value={wateringFrequencyDays}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-									setWateringFrequencyDays(e.target.valueAsNumber);
-								}}
-								className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
-							/>
-						</label>
-						<label className="flex flex-col">
-							Fertilize Frequency in Days:
-							<input
-								type="number"
-								required
-								value={fertilizingFrequencyDays}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-									setFertilizingFrequencyDays(e.target.valueAsNumber);
-								}}
-								className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
-							/>
-						</label>
-						<label className="flex flex-col">
-							Days to Harvest:
-							<input
-								type="number"
-								required
-								value={estimatedDaysToHarvest}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-									setEstimatedDaysToHarvest(e.target.valueAsNumber);
-								}}
-								className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
-							/>
-						</label>
-
+						<FormInput
+							label="Planted At:"
+							type="date"
+							required
+							value={plantedAt}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+								setPlantedAt(e.target.value);
+							}}
+						/>
+						<FormInput
+							label="Watering Frequency in Days:"
+							type="number"
+							required
+							value={wateringFrequencyDays}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+								setWateringFrequencyDays(e.target.valueAsNumber);
+							}}
+						/>
+						<FormInput
+							label="Fertilize Frequency in Days:"
+							type="number"
+							required
+							value={fertilizingFrequencyDays}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+								setFertilizingFrequencyDays(e.target.valueAsNumber);
+							}}
+						/>
+						<FormInput
+							label="Days to Harvest:"
+							type="number"
+							required
+							value={estimatedDaysToHarvest}
+							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+								setEstimatedDaysToHarvest(e.target.valueAsNumber);
+							}}
+						/>
 						<button
 							type="submit"
 							className="p-2 text-gray-800 hover:text-white text-lg font-bold border-2 border-[#6BA37E] hover:bg-[#6BA37E] rounded transition-colors"
@@ -330,7 +342,10 @@ export default function Bed() {
 					Are you sure that you want to delete your bed? All data will be
 					irreversibly lost.
 				</p>
-				<fieldset disabled={isDeletingBed} className="flex w-full gap-2 border-t-2 pt-2 border-gray-300">
+				<fieldset
+					disabled={isDeletingBed}
+					className="flex w-full gap-2 border-t-2 pt-2 border-gray-300"
+				>
 					<button
 						type="button"
 						onClick={toggleBedDelete}
