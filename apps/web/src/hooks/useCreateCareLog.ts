@@ -4,6 +4,7 @@ import type {
 	PendingCareType,
 	TodayOverviewType,
 } from "@/types/TodayOverviewType";
+import { CareLogType } from "@/types/CareLogType";
 
 export const useCreateCareLog = () => {
 	const queryClient = useQueryClient();
@@ -28,15 +29,8 @@ export const useCreateCareLog = () => {
 
 		onSuccess: ({
 			careLog,
-		}: {
-			careLog: {
-				id: string;
-				type: PendingCareType;
-				quantity: number | null;
-				createdAt: Date;
-				plantingId: string;
-			};
-		}) => {
+		}: {careLog: CareLogType}) => {
+			queryClient.invalidateQueries({queryKey: ["careLogs"]})
 			queryClient.setQueryData(
 				["today"],
 				(oldData: { todayOverview: TodayOverviewType }) => {
