@@ -1,16 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/apiClient";
 import type { CareLogType } from "@/types/CareLogType";
 
-export const useCareLogs = (plantingId: string, page:number, pageSize:number) => {
-	const {
-		data,
-		isPending: isCareLogsPending,
-		isError: isCareLogsError,
-	} = useQuery({
-		queryKey: ["careLogs", plantingId, page, pageSize],
-		queryFn: async () => {
-			const data = await apiFetch(`/plantings/${plantingId}/care-logs?page=${page}&pageSize=${pageSize}`);
+export const useCareLogs = (plantingId: string, pageSize: number) => {
+	return useInfiniteQuery({
+		queryKey: ["careLogs", plantingId, pageSize],
+		queryFn: async ({ pageParam = 1 }) => {
+			const data = await apiFetch(
+				`/plantings/${plantingId}/care-logs?page=${pageParam}&pageSize=${pageSize}`,
+			);
 			return data as {
 				careLogs: CareLogType[];
 				totalOfLogs: number;
@@ -20,14 +18,12 @@ export const useCareLogs = (plantingId: string, page:number, pageSize:number) =>
 				};
 			};
 		},
+		initialPageParam: 1,
+		getNextPageParam: (lastPage) => {
+			const { page, pageSize } = lastPage.paginationParams;
+			const totalOfPages = Math.ceil(lastPage.totalOfLogs / pageSize);
+			return page < totalOfPages ? page + 1 : undefined;
+		},
 		enabled: !!plantingId,
 	});
-
-	return {
-		careLogs: data?.careLogs ?? [],
-		totalOfLogs: data?.totalOfLogs ?? 0,
-		usedPaginationParams: data?.paginationParams,
-		isCareLogsPending,
-		isCareLogsError,
-	};
 };
