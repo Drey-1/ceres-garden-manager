@@ -1,14 +1,14 @@
 type PlantingType = {
 	id: string;
 	species: string;
-	plantedAt: Date;
+	plantedAt: string;
 	wateringFrequencyDays: number;
 	fertilizingFrequencyDays: number;
 	estimatedDaysToHarvest: number;
 	status: "ACTIVE" | "FINISHED";
 	bedId: string;
-	createdAt: Date;
-	updatedAt: Date;
+	createdAt: string;
+	updatedAt: string;
 };
 
 export type { PlantingType };
