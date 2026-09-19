@@ -29,8 +29,8 @@ const PlantingCard = ({
 					</span>{" "}
 					planted at{" "}
 					<span className="text-lg text-blue-900">
-						{planting?.createdAt
-							? new Date(planting.createdAt).toLocaleDateString()
+						{planting?.plantedAt
+							? new Date(planting.plantedAt).toLocaleDateString()
 							: ""}
 					</span>
 				</p>

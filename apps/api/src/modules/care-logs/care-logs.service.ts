@@ -17,7 +17,7 @@ export async function createCareLog(
 	return await prisma.careLog.create({
 		data: {
 			type: data.type,
-			quantity: data.quantity ?? null,
+			quantity: data.quantity ?? 1,
 			plantingId,
 		},
 	});
@@ -37,4 +37,28 @@ export async function listCareLogs(
 	});
 	const totalOfLogs = await prisma.careLog.count({ where: { plantingId } });
 	return { careLogs, totalOfLogs };
+}
+
+export async function getCareLogsSummary(userId: string, plantingId: string) {
+	await confirmHolderPlanting(userId, plantingId);
+	const summary = await prisma.careLog.groupBy({
+		by: ["type"],
+		where: { plantingId },
+		_sum: { quantity: true },
+	});
+	const completeSummary = ["WATER", "FERTILIZE", "HARVEST"].map((type) => {
+		const already = summary.find((sumOfType) => sumOfType.type === type);
+		if (!already) {
+			return { type, _sum: { quantity: 0 } };
+		}
+
+		return already;
+	});
+	return completeSummary.reduce<Record<string, { quantity: number | null }>>(
+		(object, item) => {
+			object[item.type.toLowerCase()] = { quantity: item._sum.quantity };
+			return object;
+		},
+		{},
+	);
 }

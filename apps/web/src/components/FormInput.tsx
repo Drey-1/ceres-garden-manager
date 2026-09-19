@@ -1,3 +1,5 @@
+import { cn } from "@/lib/utils";
+
 type FormInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 	label?: string;
 };
@@ -19,9 +21,12 @@ export default function FormInput({
 	const inputElement = (
 		<input
 			type={type}
-            onClick={handleClick}
-            className={`bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2 disabled:opacity-50 disabled:outline-0 ${className}`}
-            {...props}
+			onClick={handleClick}
+			className={cn(
+				"bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2 disabled:opacity-50 disabled:outline-0",
+				className,
+			)}
+			{...props}
 		/>
 	);
 

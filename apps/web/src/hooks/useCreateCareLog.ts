@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/apiClient";
+import type { CareLogType } from "@/types/CareLogType";
 import type {
 	PendingCareType,
 	TodayOverviewType,
@@ -8,51 +9,45 @@ import type {
 export const useCreateCareLog = () => {
 	const queryClient = useQueryClient();
 
-	const { mutate } = useMutation({
+	const { mutate, isPending: isCreatingCareLog } = useMutation({
 		mutationFn: async ({
 			type,
+			quantity,
 			plantingId,
 		}: {
 			type: PendingCareType;
+			quantity?: number;
 			plantingId: string;
 		}) => {
 			const careLog = await apiFetch(`/plantings/${plantingId}/care-logs`, {
 				method: "POST",
 				body: JSON.stringify({
 					type,
-					quantity: 1,
+					quantity,
 				}),
 			});
 			return careLog;
 		},
 
-		onSuccess: ({
-			careLog,
-		}: {
-			careLog: {
-				id: string;
-				type: PendingCareType;
-				quantity: number | null;
-				createdAt: Date;
-				plantingId: string;
-			};
-		}) => {
+		onSuccess: ({ careLog }: { careLog: CareLogType }) => {
 			queryClient.setQueryData(
 				["today"],
 				(oldData: { todayOverview: TodayOverviewType }) => {
 					if (!oldData) return oldData;
 
-					return {todayOverview: oldData.todayOverview.map((planting) => {
-						if (planting.id === careLog.plantingId) {
-							return {
-								...planting,
-								pendingActions: planting.pendingActions.filter(
-									(action) => action !== careLog.type,
-								),
-							};
-						}
-						return planting;
-					})};
+					return {
+						todayOverview: oldData.todayOverview.map((planting) => {
+							if (planting.id === careLog.plantingId) {
+								return {
+									...planting,
+									pendingActions: planting.pendingActions.filter(
+										(action) => action !== careLog.type,
+									),
+								};
+							}
+							return planting;
+						}),
+					};
 				},
 			);
 		},
@@ -62,5 +57,5 @@ export const useCreateCareLog = () => {
 		},
 	});
 
-	return { mutate };
+	return { mutate, isCreatingCareLog };
 };
