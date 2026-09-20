@@ -1,24 +1,19 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
 import { BellOffIcon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Dialog from "@/components/Dialog";
-import FormInput from "@/components/FormInput";
+import CareLogCreationForm from "@/components/plantings/CareLogCreationForm";
 import CareLogsList from "@/components/plantings/CareLogsList";
 import PlantingHeader from "@/components/plantings/PlantingHeader";
 import PlantingSummary from "@/components/plantings/PlantingSummary";
 import PlantingUpdateForm from "@/components/plantings/PlantingUpdateForm";
-import SubmitButton from "@/components/SubmitButton";
-import { useCreateCareLog } from "@/hooks/useCreateCareLog";
 import { useDeletePlanting } from "@/hooks/useDeletePlanting";
 import { usePlanting } from "@/hooks/usePlanting";
 import { useUpdatePlanting } from "@/hooks/useUpdatePlanting";
-import type { PendingCareType } from "@/types/TodayOverviewType";
 
 export default function Planting() {
-	const queryClient = useQueryClient();
 	const router = useRouter();
 	const params: { id: string } = useParams();
 	const { planting, isPlantingPending, isPlantingError } = usePlanting(
@@ -34,7 +29,6 @@ export default function Planting() {
 				24
 			).toFixed(0)
 		: null;
-	const { mutate: createCareLog, isCreatingCareLog } = useCreateCareLog();
 	const { updatePlanting, isUpdatingPlanting } = useUpdatePlanting(params.id);
 	const { deletePlanting, isDeletingPlanting } = useDeletePlanting(params.id);
 
@@ -42,10 +36,6 @@ export default function Planting() {
 	const [isPlantingDeleteOpen, setPlantingDeleteOpen] = useState(false);
 	const [isCareLogCreateOpen, setCareLogCreateOpen] = useState(false);
 	const [isPlantingFinishOpen, setPlantingFinishOpen] = useState(false);
-
-	const [type, setType] = useState<PendingCareType>("WATER");
-	const [isQuantityOn, setQuantityOn] = useState(false);
-	const [quantity, setQuantity] = useState<number | undefined>(undefined);
 
 	const togglePlantingEdit = () => {
 		setPlantingEditOpen(!isPlantingEditOpen);
@@ -66,27 +56,6 @@ export default function Planting() {
 				router.push(`/beds/${planting?.bedId}`);
 			},
 		});
-	};
-	const handleCareLogCreate = (e: React.SubmitEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		if (!planting) return;
-		createCareLog(
-			{ type, quantity, plantingId: planting.id },
-			{
-				onSuccess: () => {
-					queryClient.invalidateQueries({
-						queryKey: ["careLogs", planting.id],
-					});
-					queryClient.invalidateQueries({
-						queryKey: ["careSummary", planting.id],
-					});
-					toggleCareLogCreate();
-					setType("WATER");
-					setQuantityOn(false);
-					setQuantity(undefined);
-				},
-			},
-		);
 	};
 
 	const handlePlantingFinish = () => {
@@ -163,52 +132,14 @@ export default function Planting() {
 					isOpen={isPlantingEditOpen}
 				/>
 			)}
-			<Dialog
-				isOpen={isCareLogCreateOpen}
-				onClose={toggleCareLogCreate}
-				title="New Care Log"
-			>
-				<form action="" onSubmit={handleCareLogCreate}>
-					<fieldset
-						disabled={isCreatingCareLog}
-						className="disabled:opacity-50 flex flex-col gap-6  p-4"
-					>
-						<select
-							value={type}
-							onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-								setType(e.target.value as PendingCareType);
-							}}
-							className={`bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2 disabled:opacity-50 disabled:outline-0`}
-						>
-							<option className="hover:bg-[#6ba37e]" value="WATER">
-								Water
-							</option>
-							<option value="FERTILIZE">Fertilize</option>
-							<option value="HARVEST">Harvest</option>
-						</select>
-						<label className="flex items-center gap-2">
-							<input
-								type="checkbox"
-								checked={isQuantityOn}
-								onChange={(e) => setQuantityOn(e.target.checked)}
-								className=" accent-[#3F6E4A] size-4"
-							/>{" "}
-							Include Quantity
-						</label>
-						<FormInput
-							type="number"
-							disabled={!isQuantityOn}
-							value={quantity ?? ""}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-								const value = e.target.valueAsNumber;
-								setQuantity(Number.isNaN(value) ? undefined : value);
-							}}
-							className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2 disabled:opacity-50 disabled:outline-0"
-						/>
-						<SubmitButton>Create</SubmitButton>
-					</fieldset>
-				</form>
-			</Dialog>
+
+			{planting && (
+				<CareLogCreationForm
+					plantingId={params.id}
+					closeFunction={toggleCareLogCreate}
+					isOpen={isCareLogCreateOpen}
+				/>
+			)}
 			<Dialog
 				isOpen={isPlantingDeleteOpen}
 				onClose={togglePlantingDelete}
