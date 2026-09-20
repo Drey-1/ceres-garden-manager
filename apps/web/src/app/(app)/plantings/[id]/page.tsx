@@ -3,12 +3,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { BellOffIcon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import {  useEffect , useState } from "react";
+import { useState } from "react";
 import Dialog from "@/components/Dialog";
 import FormInput from "@/components/FormInput";
 import CareLogsList from "@/components/plantings/CareLogsList";
 import PlantingHeader from "@/components/plantings/PlantingHeader";
 import PlantingSummary from "@/components/plantings/PlantingSummary";
+import PlantingUpdateForm from "@/components/plantings/PlantingUpdateForm";
 import SubmitButton from "@/components/SubmitButton";
 import { useCreateCareLog } from "@/hooks/useCreateCareLog";
 import { useDeletePlanting } from "@/hooks/useDeletePlanting";
@@ -42,18 +43,6 @@ export default function Planting() {
 	const [isCareLogCreateOpen, setCareLogCreateOpen] = useState(false);
 	const [isPlantingFinishOpen, setPlantingFinishOpen] = useState(false);
 
-	const [species, setSpecies] = useState(planting?.species);
-	const [plantedAt, setPlantedAt] = useState(planting?.plantedAt);
-	const [estimatedDaysToHarvest, setEstimatedDaysToHarvest] = useState(
-		planting?.estimatedDaysToHarvest,
-	);
-	const [fertilizingFrequencyDays, setFertilizingFrequencyDays] = useState(
-		planting?.fertilizingFrequencyDays,
-	);
-	const [wateringFrequencyDays, setWateringFrequencyDays] = useState(
-		planting?.wateringFrequencyDays,
-	);
-
 	const [type, setType] = useState<PendingCareType>("WATER");
 	const [isQuantityOn, setQuantityOn] = useState(false);
 	const [quantity, setQuantity] = useState<number | undefined>(undefined);
@@ -71,23 +60,6 @@ export default function Planting() {
 		setPlantingFinishOpen(!isPlantingFinishOpen);
 	};
 
-	const handlePlantingUpdate = (e: React.SubmitEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		updatePlanting(
-			{
-				species,
-				plantedAt,
-				wateringFrequencyDays,
-				fertilizingFrequencyDays,
-				estimatedDaysToHarvest,
-			},
-			{
-				onSuccess: () => {
-					togglePlantingEdit();
-				},
-			},
-		);
-	};
 	const handlePlantingDelete = () => {
 		deletePlanting(undefined, {
 			onSuccess: () => {
@@ -130,16 +102,6 @@ export default function Planting() {
 		);
 	};
 
-	useEffect(() => {
-		if (planting) {
-			setSpecies(planting?.species);
-			setPlantedAt(planting?.plantedAt);
-			setEstimatedDaysToHarvest(planting?.estimatedDaysToHarvest);
-			setFertilizingFrequencyDays(planting?.fertilizingFrequencyDays);
-			setWateringFrequencyDays(planting?.wateringFrequencyDays);
-		}
-	}, [planting]);
-
 	if (isPlantingPending) {
 		return (
 			<main className="flex flex-col gap-4 p-4 w-full h-full">
@@ -162,16 +124,14 @@ export default function Planting() {
 
 	return (
 		<main className="flex flex-col gap-4 p-4 w-full min-h-full">
-			{planting ? (
+			{planting && (
 				<PlantingHeader
 					planting={planting}
 					updateFunction={togglePlantingEdit}
 					deleteFunction={togglePlantingDelete}
 				/>
-			) : (
-				""
 			)}
-			{isPlantingActive ? (
+			{isPlantingActive && (
 				<button
 					type="button"
 					onClick={togglePlantingFinish}
@@ -182,16 +142,12 @@ export default function Planting() {
 					</div>
 					<p className="text-lg sm:text-3xl">Finish this planting</p>
 				</button>
-			) : (
-				""
 			)}
-			{plantingLifeInDays ? (
+			{plantingLifeInDays && (
 				<PlantingSummary
 					plantingId={params.id}
 					plantingTimeLifeDays={plantingLifeInDays}
 				/>
-			) : (
-				""
 			)}
 
 			<CareLogsList
@@ -199,68 +155,14 @@ export default function Planting() {
 				isPlantingActive={isPlantingActive}
 				creationFunction={toggleCareLogCreate}
 			/>
-			
-			<Dialog
-				isOpen={isPlantingEditOpen}
-				onClose={togglePlantingEdit}
-				title="Edit Planting"
-			>
-				<form action="" onSubmit={handlePlantingUpdate}>
-					<fieldset
-						disabled={isUpdatingPlanting}
-						className="disabled:opacity-50 flex flex-col gap-6  p-4"
-					>
-						<FormInput
-							type="text"
-							placeholder="Species:"
-							required
-							value={species}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-								setSpecies(e.target.value);
-							}}
-						/>
-						<FormInput
-							label="Planted At:"
-							type="date"
-							required
-							value={
-								plantedAt ? new Date(plantedAt).toISOString().split("T")[0] : ""
-							}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-								setPlantedAt(e.target.value);
-							}}
-						/>
-						<FormInput
-							label="Watering Frequency in Days:"
-							type="number"
-							required
-							value={wateringFrequencyDays}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-								setWateringFrequencyDays(e.target.valueAsNumber);
-							}}
-						/>
-						<FormInput
-							label="Fertilize Frequency in Days:"
-							type="number"
-							required
-							value={fertilizingFrequencyDays}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-								setFertilizingFrequencyDays(e.target.valueAsNumber);
-							}}
-						/>
-						<FormInput
-							label="Days to Harvest:"
-							type="number"
-							required
-							value={estimatedDaysToHarvest}
-							onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-								setEstimatedDaysToHarvest(e.target.valueAsNumber);
-							}}
-						/>
-						<SubmitButton>Update</SubmitButton>
-					</fieldset>
-				</form>
-			</Dialog>
+
+			{planting && (
+				<PlantingUpdateForm
+					planting={planting}
+					closeFunction={togglePlantingEdit}
+					isOpen={isPlantingEditOpen}
+				/>
+			)}
 			<Dialog
 				isOpen={isCareLogCreateOpen}
 				onClose={toggleCareLogCreate}
