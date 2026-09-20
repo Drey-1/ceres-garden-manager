@@ -1,20 +1,19 @@
 "use client";
 
 import { BellOffIcon } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import Dialog from "@/components/Dialog";
 import CareLogCreationForm from "@/components/plantings/CareLogCreationForm";
 import CareLogsList from "@/components/plantings/CareLogsList";
+import PlantingDeleteConfirmation from "@/components/plantings/PlantingDeleteConfirmation";
 import PlantingHeader from "@/components/plantings/PlantingHeader";
 import PlantingSummary from "@/components/plantings/PlantingSummary";
 import PlantingUpdateForm from "@/components/plantings/PlantingUpdateForm";
-import { useDeletePlanting } from "@/hooks/useDeletePlanting";
 import { usePlanting } from "@/hooks/usePlanting";
 import { useUpdatePlanting } from "@/hooks/useUpdatePlanting";
 
 export default function Planting() {
-	const router = useRouter();
 	const params: { id: string } = useParams();
 	const { planting, isPlantingPending, isPlantingError } = usePlanting(
 		params.id,
@@ -30,7 +29,6 @@ export default function Planting() {
 			).toFixed(0)
 		: null;
 	const { updatePlanting, isUpdatingPlanting } = useUpdatePlanting(params.id);
-	const { deletePlanting, isDeletingPlanting } = useDeletePlanting(params.id);
 
 	const [isPlantingEditOpen, setPlantingEditOpen] = useState(false);
 	const [isPlantingDeleteOpen, setPlantingDeleteOpen] = useState(false);
@@ -48,14 +46,6 @@ export default function Planting() {
 	};
 	const togglePlantingFinish = () => {
 		setPlantingFinishOpen(!isPlantingFinishOpen);
-	};
-
-	const handlePlantingDelete = () => {
-		deletePlanting(undefined, {
-			onSuccess: () => {
-				router.push(`/beds/${planting?.bedId}`);
-			},
-		});
 	};
 
 	const handlePlantingFinish = () => {
@@ -140,35 +130,15 @@ export default function Planting() {
 					isOpen={isCareLogCreateOpen}
 				/>
 			)}
-			<Dialog
-				isOpen={isPlantingDeleteOpen}
-				onClose={togglePlantingDelete}
-				title="Delete Planting"
-			>
-				<p className="max-w-72">
-					Are you sure that you want to delete your planting? All data will be
-					irreversibly lost.
-				</p>
-				<fieldset
-					disabled={isDeletingPlanting}
-					className="flex w-full gap-2 border-t-2 pt-2 border-gray-300"
-				>
-					<button
-						type="button"
-						onClick={togglePlantingDelete}
-						className="p-2 text-gray-800 w-full  hover:text-white text-lg font-bold border-2 border-gray-400 hover:bg-gray-500 active:brightness-110 rounded transition-colors"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						onClick={handlePlantingDelete}
-						className="p-2 text-white w-full text-lg font-bold bg-red-500 hover:brightness-80 active:brightness-110 rounded transition-colors"
-					>
-						Delete
-					</button>
-				</fieldset>
-			</Dialog>
+
+			{planting && (
+				<PlantingDeleteConfirmation
+					planting={planting}
+					closeFunction={togglePlantingDelete}
+					isOpen={isPlantingDeleteOpen}
+				/>
+			)}
+
 			<Dialog
 				isOpen={isPlantingFinishOpen}
 				onClose={togglePlantingFinish}
