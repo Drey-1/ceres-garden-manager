@@ -1,30 +1,20 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import {
-	AppleIcon,
-	BellOffIcon,
-	ClockIcon,
-	DropletIcon,
-	PlusIcon,
-	SparklesIcon,
-} from "lucide-react";
+import { BellOffIcon } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import Card from "@/components/Card";
+import {  useEffect , useState } from "react";
 import Dialog from "@/components/Dialog";
 import FormInput from "@/components/FormInput";
-import Header from "@/components/Header";
+import CareLogsList from "@/components/plantings/CareLogsList";
+import PlantingHeader from "@/components/plantings/PlantingHeader";
+import PlantingSummary from "@/components/plantings/PlantingSummary";
 import SubmitButton from "@/components/SubmitButton";
-import { useCareLogs } from "@/hooks/useCareLogs";
-import { useCareLogsSummary } from "@/hooks/useCareLogsSummary";
 import { useCreateCareLog } from "@/hooks/useCreateCareLog";
 import { useDeletePlanting } from "@/hooks/useDeletePlanting";
 import { usePlanting } from "@/hooks/usePlanting";
 import { useUpdatePlanting } from "@/hooks/useUpdatePlanting";
 import type { PendingCareType } from "@/types/TodayOverviewType";
-
-const pageSize = 10;
 
 export default function Planting() {
 	const queryClient = useQueryClient();
@@ -33,23 +23,7 @@ export default function Planting() {
 	const { planting, isPlantingPending, isPlantingError } = usePlanting(
 		params.id,
 	);
-	const { careLogsSummary, isCareLogsSummaryPending, isCareLogsSummaryError } =
-		useCareLogsSummary(params.id);
-	const {
-		data,
-		fetchNextPage,
-		hasNextPage,
-		isFetchingNextPage,
-		isPending: isCareLogsPending,
-		isError: isCareLogsError,
-	} = useCareLogs(params.id, pageSize);
-	const careLogs = data?.pages.flatMap((page) => page.careLogs) ?? [];
-	const estimatedHarvestDate = planting
-		? new Date(
-				new Date(planting?.plantedAt).getTime() +
-					planting?.estimatedDaysToHarvest * 24 * 60 * 60 * 1000,
-			).toLocaleDateString()
-		: "";
+	const isPlantingActive = planting?.status === "ACTIVE";
 	const plantingLifeInDays = planting
 		? (
 				(Date.now() - new Date(planting?.plantedAt).getTime()) /
@@ -166,29 +140,7 @@ export default function Planting() {
 		}
 	}, [planting]);
 
-	const observer = useRef<IntersectionObserver | null>(null);
-
-	const lastCareLogRef = useCallback(
-		(node: HTMLDivElement | null) => {
-			if (isFetchingNextPage) return;
-
-			if (observer.current) observer.current.disconnect();
-
-			observer.current = new IntersectionObserver(
-				(entries) => {
-					if (entries[0].isIntersecting && hasNextPage) {
-						fetchNextPage();
-					}
-				},
-				{ threshold: 0.1, rootMargin: "200px" },
-			);
-
-			if (node) observer.current.observe(node);
-		},
-		[isFetchingNextPage, hasNextPage, fetchNextPage],
-	);
-
-	if (isPlantingPending || isCareLogsSummaryPending || isCareLogsPending) {
+	if (isPlantingPending) {
 		return (
 			<main className="flex flex-col gap-4 p-4 w-full h-full">
 				<div className="flex flex-col gap-1 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform animate-pulse"></div>
@@ -198,7 +150,7 @@ export default function Planting() {
 		);
 	}
 
-	if (isPlantingError || isCareLogsSummaryError || isCareLogsError) {
+	if (isPlantingError) {
 		return (
 			<main className="flex flex-col gap-4 p-4 w-full h-full">
 				<p className="bg-slate-500 p-4 rounded-2xl w-max text-white font-semibold text-2xl m-auto wrap-break-word max-w-11/12 border-dashed border-4 border-red-600">
@@ -210,50 +162,16 @@ export default function Planting() {
 
 	return (
 		<main className="flex flex-col gap-4 p-4 w-full min-h-full">
-			<Header
-				updateFunction={togglePlantingEdit}
-				deleteFunction={togglePlantingDelete}
-			>
-				<section className="p-4">
-					<div className="flex gap-2 items-end">
-						<h1 className="text-3xl text-[#6BA37E] font-semibold">
-							{planting?.species}
-						</h1>
-						{planting?.status === "FINISHED" && (
-							<span className="text-2xl text-gray-500 font-bold">FINISHED</span>
-						)}
-					</div>
-					<p className="text-sm">
-						planted at{" "}
-						<span className="text-base text-blue-900">
-							{planting?.plantedAt
-								? new Date(planting?.plantedAt).toLocaleDateString()
-								: ""}
-						</span>
-					</p>
-					<p>
-						Water every{" "}
-						<span className="text-2xl text-blue-400">
-							{planting?.wateringFrequencyDays}
-						</span>{" "}
-						days
-					</p>
-					<p>
-						Fertilize every{" "}
-						<span className="text-2xl text-amber-500">
-							{planting?.fertilizingFrequencyDays}
-						</span>{" "}
-						days
-					</p>
-					<p>
-						Estimated Harvest Date:{" "}
-						<span className="text-2xl text-green-600">
-							{estimatedHarvestDate}
-						</span>{" "}
-					</p>
-				</section>
-			</Header>
-			{planting?.status === "ACTIVE" ? (
+			{planting ? (
+				<PlantingHeader
+					planting={planting}
+					updateFunction={togglePlantingEdit}
+					deleteFunction={togglePlantingDelete}
+				/>
+			) : (
+				""
+			)}
+			{isPlantingActive ? (
 				<button
 					type="button"
 					onClick={togglePlantingFinish}
@@ -267,87 +185,21 @@ export default function Planting() {
 			) : (
 				""
 			)}
-			<Card className="flex-col gap-2">
-				<h2 className="text-3xl text-gray-600 font-semibold text-center">
-					Statistics
-				</h2>
-				<div className="grid grid-cols-1 gap-2  md:grid-cols-2 w-full">
-					<div className="flex items-center gap-2 p-2 border-2 border-gray-500 rounded-xl">
-						<DropletIcon className="text-blue-400 fill-blue-400 size-12" />
-						<div>
-							<span className="text-xl">{careLogsSummary?.water.quantity}</span>
-							<p>Times Watered</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2 p-2 border-2 border-gray-500 rounded-xl">
-						<SparklesIcon className="text-amber-400 fill-amber-400 size-12" />
-						<div>
-							<span className="text-xl">
-								{careLogsSummary?.fertilize.quantity}
-							</span>
-							<p>Times Fertilized</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2 p-2 border-2 border-gray-500 rounded-xl">
-						<AppleIcon className="text-green-400 fill-green-400 size-12" />
-						<div>
-							<span className="text-xl">
-								{careLogsSummary?.harvest.quantity}
-							</span>
-							<p>Times Harvested</p>
-						</div>
-					</div>
-					<div className="flex items-center gap-2 p-2 border-2 border-gray-500 rounded-xl">
-						<ClockIcon className="text-gray-600 size-12" />
-						<div>
-							<span className="text-xl">{plantingLifeInDays}</span> days
-							<p>Since it was planted</p>
-						</div>
-					</div>
-				</div>
-			</Card>
+			{plantingLifeInDays ? (
+				<PlantingSummary
+					plantingId={params.id}
+					plantingTimeLifeDays={plantingLifeInDays}
+				/>
+			) : (
+				""
+			)}
 
-			<div className="flex flex-col gap-4 w-full">
-				<h2 className="text-2xl text-white font-semibold text-shadow-md">
-					All logs of care:
-				</h2>
-				{planting?.status === "ACTIVE" ? (
-					<button
-						type="button"
-						onClick={toggleCareLogCreate}
-						className="flex border-2 border-white rounded-2xl p-4 gap-4 items-center  text-white cursor-pointer hover:scale-101 hover:bg-green-600/70 transition-all active:brightness-50"
-					>
-						<div className="bg-card rounded-xl">
-							<PlusIcon className="size-8" />
-						</div>
-						<p className="text-lg sm:text-3xl">
-							Add a new care log of this planting
-						</p>
-					</button>
-				) : (
-					""
-				)}
-				{careLogs.map((careLog, index) => {
-					const isLast = careLogs.length === index + 1;
-
-					return (
-						<Card
-							key={careLog.id}
-							ref={isLast ? lastCareLogRef : null}
-							className="grid grid-cols-3 hover:scale-101 transition-transform"
-						>
-							<p>{careLog.type}</p>
-							<p>{careLog.quantity ?? 1} Time(s)</p>
-							<p className="text-end">
-								Logged at {new Date(careLog.createdAt).toLocaleDateString()}
-							</p>
-						</Card>
-					);
-				})}
-				{isFetchingNextPage && (
-					<Card className="animate-pulse">Loading...</Card>
-				)}
-			</div>
+			<CareLogsList
+				plantingId={params.id}
+				isPlantingActive={isPlantingActive}
+				creationFunction={toggleCareLogCreate}
+			/>
+			
 			<Dialog
 				isOpen={isPlantingEditOpen}
 				onClose={togglePlantingEdit}
