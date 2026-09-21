@@ -3,15 +3,14 @@
 import { BellOffIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import Dialog from "@/components/Dialog";
 import CareLogCreationForm from "@/components/plantings/CareLogCreationForm";
 import CareLogsList from "@/components/plantings/CareLogsList";
 import PlantingDeleteConfirmation from "@/components/plantings/PlantingDeleteConfirmation";
+import PlantingFinishConfirmation from "@/components/plantings/PlantingFinishConfirmation";
 import PlantingHeader from "@/components/plantings/PlantingHeader";
 import PlantingSummary from "@/components/plantings/PlantingSummary";
 import PlantingUpdateForm from "@/components/plantings/PlantingUpdateForm";
 import { usePlanting } from "@/hooks/usePlanting";
-import { useUpdatePlanting } from "@/hooks/useUpdatePlanting";
 
 export default function Planting() {
 	const params: { id: string } = useParams();
@@ -28,7 +27,6 @@ export default function Planting() {
 				24
 			).toFixed(0)
 		: null;
-	const { updatePlanting, isUpdatingPlanting } = useUpdatePlanting(params.id);
 
 	const [isPlantingEditOpen, setPlantingEditOpen] = useState(false);
 	const [isPlantingDeleteOpen, setPlantingDeleteOpen] = useState(false);
@@ -48,25 +46,10 @@ export default function Planting() {
 		setPlantingFinishOpen(!isPlantingFinishOpen);
 	};
 
-	const handlePlantingFinish = () => {
-		updatePlanting(
-			{
-				status: "FINISHED",
-			},
-			{
-				onSuccess: () => {
-					togglePlantingFinish();
-				},
-			},
-		);
-	};
-
 	if (isPlantingPending) {
 		return (
 			<main className="flex flex-col gap-4 p-4 w-full h-full">
-				<div className="flex flex-col gap-1 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform animate-pulse"></div>
-				<div className="flex flex-col gap-1 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform animate-pulse"></div>
-				<div className="flex flex-col gap-1 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform animate-pulse"></div>
+				<div className="flex h-32 flex-col gap-1 rounded-2xl bg-white p-4 w-full drop-shadow-lg text-lg text-zinc-800 overflow-hidden hover:scale-101 transition-transform animate-pulse"></div>
 			</main>
 		);
 	}
@@ -108,13 +91,11 @@ export default function Planting() {
 					plantingTimeLifeDays={plantingLifeInDays}
 				/>
 			)}
-
 			<CareLogsList
 				plantingId={params.id}
 				isPlantingActive={isPlantingActive}
 				creationFunction={toggleCareLogCreate}
 			/>
-
 			{planting && (
 				<PlantingUpdateForm
 					planting={planting}
@@ -139,35 +120,13 @@ export default function Planting() {
 				/>
 			)}
 
-			<Dialog
-				isOpen={isPlantingFinishOpen}
-				onClose={togglePlantingFinish}
-				title="Finish Planting"
-			>
-				<p className="max-w-72">
-					Are you sure you want to finish this planting? All data will be kept
-					read-only, and it will no longer appear in today's pending actions.
-				</p>
-				<fieldset
-					disabled={isUpdatingPlanting}
-					className="flex w-full gap-2 border-t-2 pt-2 border-gray-300"
-				>
-					<button
-						type="button"
-						onClick={togglePlantingFinish}
-						className="p-2 text-gray-800 w-full  hover:text-white text-lg font-bold border-2 border-gray-400 hover:bg-gray-500 active:brightness-110 rounded transition-colors"
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						onClick={handlePlantingFinish}
-						className="p-2 text-white w-full text-lg font-bold  bg-gray-600 hover:brightness-80 active:brightness-110 rounded transition-colors"
-					>
-						Finish
-					</button>
-				</fieldset>
-			</Dialog>
+			{planting && (
+				<PlantingFinishConfirmation
+					plantingId={params.id}
+					closeFunction={togglePlantingFinish}
+					isOpen={isPlantingFinishOpen}
+				/>
+			)}
 		</main>
 	);
 }
