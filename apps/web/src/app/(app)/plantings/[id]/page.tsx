@@ -3,6 +3,7 @@
 import { BellOffIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
+import BarButton from "@/components/BarButton";
 import CareLogCreationForm from "@/components/plantings/CareLogCreationForm";
 import CareLogsList from "@/components/plantings/CareLogsList";
 import PlantingDeleteConfirmation from "@/components/plantings/PlantingDeleteConfirmation";
@@ -74,16 +75,12 @@ export default function Planting() {
 				/>
 			)}
 			{isPlantingActive && (
-				<button
-					type="button"
-					onClick={togglePlantingFinish}
-					className="flex border-2 border-white rounded-2xl p-4 gap-4 items-center  text-white cursor-pointer hover:scale-101 hover:bg-gray-400/70 transition-all active:brightness-50"
-				>
-					<div className="bg-card rounded-xl">
-						<BellOffIcon className="size-8" />
-					</div>
-					<p className="text-lg sm:text-3xl">Finish this planting</p>
-				</button>
+				<BarButton
+					Icon={BellOffIcon}
+					text="Finish this planting"
+					clickFunction={togglePlantingFinish}
+					className="hover:bg-gray-400/70"
+				/>
 			)}
 			{plantingLifeInDays && (
 				<PlantingSummary

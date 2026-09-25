@@ -1,64 +1,54 @@
-import { useEffect, useState } from "react";
-import { useUpdatePlanting } from "@/hooks/useUpdatePlanting";
-import type { PlantingType } from "@/types/PlantingType";
+import { useState } from "react";
+import { useCreatePlanting } from "@/hooks/useCreatePlanting";
 import Dialog from "../Dialog";
 import FormInput from "../FormInput";
 import SubmitButton from "../SubmitButton";
 
-export default function PlantingUpdateForm({
-	planting,
-	closeFunction,
+export default function PlantingCreationForm({
+	bedId,
 	isOpen,
+	closeFunction,
 }: {
-	planting: PlantingType;
-	closeFunction: () => void;
+	bedId: string;
 	isOpen: boolean;
+	closeFunction: () => void;
 }) {
-	const { updatePlanting, isUpdatingPlanting } = useUpdatePlanting(planting.id);
+	const { createPlanting, isCreatingPlanting } = useCreatePlanting(bedId);
+	const [species, setSpecies] = useState("");
+	const [plantedAt, setPlantedAt] = useState("");
+	const [estimatedDaysToHarvest, setEstimatedDaysToHarvest] = useState(0);
+	const [fertilizingFrequencyDays, setFertilizingFrequencyDays] = useState(0);
+	const [wateringFrequencyDays, setWateringFrequencyDays] = useState(0);
 
-	const [species, setSpecies] = useState(planting.species);
-	const [plantedAt, setPlantedAt] = useState(planting.plantedAt);
-	const [estimatedDaysToHarvest, setEstimatedDaysToHarvest] = useState(
-		planting.estimatedDaysToHarvest,
-	);
-	const [fertilizingFrequencyDays, setFertilizingFrequencyDays] = useState(
-		planting.fertilizingFrequencyDays,
-	);
-	const [wateringFrequencyDays, setWateringFrequencyDays] = useState(
-		planting.wateringFrequencyDays,
-	);
-
-	const handlePlantingUpdate = (e: React.SubmitEvent<HTMLFormElement>) => {
+	const handlePlantingCreation = (e: React.SubmitEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		updatePlanting(
+
+		createPlanting(
 			{
 				species,
 				plantedAt,
-				wateringFrequencyDays,
-				fertilizingFrequencyDays,
 				estimatedDaysToHarvest,
+				fertilizingFrequencyDays,
+				wateringFrequencyDays,
 			},
 			{
 				onSuccess: () => {
 					closeFunction();
+					setSpecies("");
+					setPlantedAt("");
+					setEstimatedDaysToHarvest(0);
+					setFertilizingFrequencyDays(0);
+					setWateringFrequencyDays(0);
 				},
 			},
 		);
 	};
 
-	useEffect(() => {
-		setSpecies(planting.species);
-		setPlantedAt(planting.plantedAt);
-		setEstimatedDaysToHarvest(planting.estimatedDaysToHarvest);
-		setFertilizingFrequencyDays(planting.fertilizingFrequencyDays);
-		setWateringFrequencyDays(planting.wateringFrequencyDays);
-	}, [isOpen]);
-
 	return (
-		<Dialog isOpen={isOpen} onClose={closeFunction} title="Edit Planting">
-			<form action="" onSubmit={handlePlantingUpdate}>
+		<Dialog isOpen={isOpen} onClose={closeFunction} title="New Planting">
+			<form action="" onSubmit={handlePlantingCreation}>
 				<fieldset
-					disabled={isUpdatingPlanting}
+					disabled={isCreatingPlanting}
 					className="disabled:opacity-50 flex flex-col gap-6  p-4"
 				>
 					<FormInput
@@ -74,9 +64,7 @@ export default function PlantingUpdateForm({
 						label="Planted At:"
 						type="date"
 						required
-						value={
-							plantedAt ? new Date(plantedAt).toISOString().split("T")[0] : ""
-						}
+						value={plantedAt}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 							setPlantedAt(e.target.value);
 						}}
@@ -108,7 +96,7 @@ export default function PlantingUpdateForm({
 							setEstimatedDaysToHarvest(e.target.valueAsNumber);
 						}}
 					/>
-					<SubmitButton>Update</SubmitButton>
+					<SubmitButton>Create</SubmitButton>
 				</fieldset>
 			</form>
 		</Dialog>
