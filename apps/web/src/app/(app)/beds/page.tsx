@@ -2,6 +2,7 @@
 
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
+import BarButton from "@/components/BarButton";
 import BedCard from "@/components/beds/BedCard";
 import BedCreationForm from "@/components/beds/BedCreationForm";
 import { useBeds } from "@/hooks/useBeds";
@@ -40,16 +41,12 @@ export default function Beds() {
 			{bedsList.map((bed) => (
 				<BedCard bed={bed} key={bed.id} />
 			))}
-			<button
-				type="button"
-				onClick={toggleForm}
-				className="flex border-2 border-white rounded-2xl p-4 gap-4 items-center  text-white cursor-pointer hover:scale-101 hover:bg-green-600/70 transition-all active:brightness-50"
-			>
-				<div className="bg-card rounded-xl">
-					<PlusIcon className="size-8" />
-				</div>
-				<p className="text-lg sm:text-3xl">Add a new bed to your list</p>
-			</button>
+			<BarButton
+				Icon={PlusIcon}
+				text="Add a new bed to your list"
+				clickFunction={toggleForm}
+				className="hover:bg-green-600/70"
+			/>
 			<BedCreationForm isOpen={isFormOpen} closeFunction={toggleForm} />
 		</main>
 	);
