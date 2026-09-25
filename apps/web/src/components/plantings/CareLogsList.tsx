@@ -1,6 +1,7 @@
 import { PlusIcon } from "lucide-react";
 import { useCallback, useRef } from "react";
 import { useCareLogs } from "@/hooks/useCareLogs";
+import BarButton from "../BarButton";
 import Card from "../Card";
 
 const pageSize = 10;
@@ -8,11 +9,11 @@ const pageSize = 10;
 export default function CareLogsList({
 	plantingId,
 	isPlantingActive,
-    creationFunction
+	creationFunction,
 }: {
 	plantingId: string;
 	isPlantingActive: boolean;
-    creationFunction: () => void
+	creationFunction: () => void;
 }) {
 	const {
 		data,
@@ -60,18 +61,12 @@ export default function CareLogsList({
 				All logs of care:
 			</h2>
 			{isPlantingActive ? (
-				<button
-					type="button"
-					onClick={creationFunction}
-					className="flex border-2 border-white rounded-2xl p-4 gap-4 items-center  text-white cursor-pointer hover:scale-101 hover:bg-green-600/70 transition-all active:brightness-50"
-				>
-					<div className="bg-card rounded-xl">
-						<PlusIcon className="size-8" />
-					</div>
-					<p className="text-lg sm:text-3xl">
-						Add a new care log of this planting
-					</p>
-				</button>
+				<BarButton
+					Icon={PlusIcon}
+					text="Add a new care log of this planting"
+					clickFunction={creationFunction}
+					className="hover:bg-green-600/70"
+				/>
 			) : (
 				""
 			)}
