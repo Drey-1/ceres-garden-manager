@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useUpdatePlanting } from "@/hooks/useUpdatePlanting";
 import type { PlantingType } from "@/types/PlantingType";
 import Dialog from "../Dialog";
@@ -45,6 +45,14 @@ export default function PlantingUpdateForm({
 			},
 		);
 	};
+
+	useEffect(() => {
+		setSpecies(planting.species);
+		setPlantedAt(planting.plantedAt);
+		setEstimatedDaysToHarvest(planting.estimatedDaysToHarvest);
+		setFertilizingFrequencyDays(planting.fertilizingFrequencyDays);
+		setWateringFrequencyDays(planting.wateringFrequencyDays);
+	}, [isOpen]);
 
 	return (
 		<Dialog isOpen={isOpen} onClose={closeFunction} title="Edit Planting">
