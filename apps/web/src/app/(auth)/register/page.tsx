@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
+import FormInput from "@/components/FormInput";
+import SubmitButton from "@/components/SubmitButton";
 import { apiFetch, setAccessToken } from "@/lib/apiClient";
 
 export default function Register() {
@@ -42,7 +44,7 @@ export default function Register() {
 			<h2 className="text-2xl text-center text-white font-bold text-border text-shadow-lg">
 				Register
 			</h2>
-			<input
+			<FormInput
 				type="email"
 				placeholder="Email:"
 				value={email}
@@ -50,9 +52,8 @@ export default function Register() {
 				onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 					setEmail(e.target.value);
 				}}
-				className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
 			/>
-			<input
+			<FormInput
 				type="password"
 				placeholder="Password:"
 				value={password}
@@ -60,14 +61,8 @@ export default function Register() {
 				onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 					setPassword(e.target.value);
 				}}
-				className="bg-gray-100 text-lg text-gray-700 p-3 rounded placeholder:text-gray-500 focus:bg-white focus:outline-2 focus:outline-[#3F6E4A] focus:border-0  hover:outline-[#A4CBA9] hover:outline-2"
 			/>
-			<button
-				type="submit"
-				className="p-2 text-gray-800 hover:text-white text-lg font-bold border-2 border-[#6BA37E] hover:bg-[#6BA37E] rounded transition-colors"
-			>
-				Submit
-			</button>
+			<SubmitButton>Register</SubmitButton>
 			<p className="text-lg text-gray-600">
 				Already have an account?{" "}
 				<Link href={"/login"} className="text-[#56A2E8] font-semibold">
