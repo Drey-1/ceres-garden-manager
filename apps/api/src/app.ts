@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import { errorHandler } from "./errors.js";
 import requireAuth from "./modules/auth/auth.middleware.js";
 import { router as authRoutes } from "./modules/auth/auth.routes.js";
 import { router as bedsRoutes } from "./modules/beds/beds.routes.js";
@@ -35,5 +36,7 @@ app.use("/plantings", requireAuth, plantingRouter);
 app.use("/plantings", requireAuth, careLogsRouter);
 
 app.use("/today", requireAuth, todayRouter);
+
+app.use(errorHandler);
 
 export { app };
