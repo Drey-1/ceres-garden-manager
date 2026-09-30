@@ -1,6 +1,9 @@
 import type { Request, Response } from "express";
-import { NotFoundError } from "../../errors.js";
-import { createCareLog, getCareLogsSummary, listCareLogs } from "./care-logs.service.js";
+import {
+	createCareLog,
+	getCareLogsSummary,
+	listCareLogs,
+} from "./care-logs.service.js";
 
 export async function createCareLogController(req: Request, res: Response) {
 	const { type, quantity } = req.body;
@@ -16,19 +19,11 @@ export async function createCareLogController(req: Request, res: Response) {
 	}
 	if (!userId) return res.status(400).json({ error: "No user ID provided." });
 
-	try {
-		const careLog = await createCareLog(userId, plantingId, {
-			type,
-			quantity,
-		});
-		return res.status(201).json({ careLog });
-	} catch (err: any) {
-		if (err instanceof NotFoundError) {
-			return res.status(404).json({ error: err.message });
-		}
-		console.error(err);
-		return res.status(500).json({ error: "Internal server error." });
-	}
+	const careLog = await createCareLog(userId, plantingId, {
+		type,
+		quantity,
+	});
+	return res.status(201).json({ careLog });
 }
 
 export async function listCareLogsController(req: Request, res: Response) {
@@ -49,23 +44,18 @@ export async function listCareLogsController(req: Request, res: Response) {
 		pageSize: Math.min(Math.max(1, rawPageSize), 25),
 	};
 
-	try {
-		const { careLogs, totalOfLogs } = await listCareLogs(
-			userId,
-			plantingId,
-			paginationParams,
-		);
-		return res.status(200).json({ careLogs, totalOfLogs, paginationParams });
-	} catch (err: any) {
-		if (err instanceof NotFoundError) {
-			return res.status(404).json({ error: err.message });
-		}
-		console.error(err);
-		return res.status(500).json({ error: "Internal server error." });
-	}
+	const { careLogs, totalOfLogs } = await listCareLogs(
+		userId,
+		plantingId,
+		paginationParams,
+	);
+	return res.status(200).json({ careLogs, totalOfLogs, paginationParams });
 }
 
-export async function getCareLogsSummaryController(req: Request, res: Response) {
+export async function getCareLogsSummaryController(
+	req: Request,
+	res: Response,
+) {
 	const plantingId = String(req.params.id);
 	const userId = req.userId;
 
@@ -74,17 +64,6 @@ export async function getCareLogsSummaryController(req: Request, res: Response) 
 	}
 	if (!userId) return res.status(400).json({ error: "No user ID provided." });
 
-	try {
-		const careLogsSummary = await getCareLogsSummary(
-			userId,
-			plantingId,
-		);
-		return res.status(200).json({ careLogsSummary });
-	} catch (err: any) {
-		if (err instanceof NotFoundError) {
-			return res.status(404).json({ error: err.message });
-		}
-		console.error(err);
-		return res.status(500).json({ error: "Internal server error." });
-	}
+	const careLogsSummary = await getCareLogsSummary(userId, plantingId);
+	return res.status(200).json({ careLogsSummary });
 }
