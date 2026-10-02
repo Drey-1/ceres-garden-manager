@@ -4,8 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"test": "vitest run src/tests/unit",
-		"test:integration": "dotenv -e .env.test -- vitest run src/tests/integration",
+		"test": "vitest run --project unit",
+		"test:integration": "dotenv -e .env.test -- vitest run --project integration",
 		"dev": "tsx watch src/server.ts"
 	},
 	"keywords": [],
