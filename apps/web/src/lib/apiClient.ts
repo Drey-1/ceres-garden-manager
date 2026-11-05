@@ -1,4 +1,4 @@
-const BASE_URL = process.env.API_URL || "http://localhost:3333";
+const BASE_URL = "/api"
 
 let currentAccessToken: string | null = null;
 
