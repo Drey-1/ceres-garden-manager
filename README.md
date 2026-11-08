@@ -4,8 +4,8 @@
 
 **Um gerenciador de horta fullstack construído com Next.js, Express e Prisma — focado em responder uma pergunta todo dia: "o que minha horta precisa de mim hoje?"**
 
-![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat-square&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?style=flat-square&logo=typescript)
 ![Express](https://img.shields.io/badge/Express-5-000000?style=flat-square&logo=express)
 ![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?style=flat-square&logo=prisma)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql)
@@ -13,7 +13,7 @@
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss)
 ![Vitest](https://img.shields.io/badge/Vitest-4-6E9F18?style=flat-square&logo=vitest)
 
-[Demo ao vivo](#) · [Reportar Bug](../../issues) · [Solicitar Feature](../../issues)
+[Demo ao vivo](https://ceres-garden-manager.vercel.app/login) · [Reportar Bug](../../issues) · [Solicitar Feature](../../issues)
 
 </div>
 
@@ -34,10 +34,13 @@
       - [**Middleware de erro centralizado**](#middleware-de-erro-centralizado)
     - [🖥️ Frontend](#️-frontend)
       - [**Deduplicação de refresh concorrente (single-flight)**](#deduplicação-de-refresh-concorrente-single-flight)
+      - [**Proxy via `rewrites` para manter o cookie first-party**](#proxy-via-rewrites-para-manter-o-cookie-first-party)
       - [**Scroll infinito com Intersection Observer**](#scroll-infinito-com-intersection-observer)
+      - [**Cache otimista sem envelope vazado**](#cache-otimista-sem-envelope-vazado)
   - [🧪 Testes](#-testes)
   - [🚀 Rodando Localmente](#-rodando-localmente)
   - [🛠️ Tecnologias](#️-tecnologias)
+  - [🌐 Deploy](#-deploy)
   - [📄 Licença](#-licença)
 
 
@@ -87,7 +90,7 @@ ceres-garden-manager/
 │   │   └── src/
 │   │       ├── modules/       # um módulo por domínio: auth, beds, plantings, care-logs, today
 │   │       ├── tests/         # unit/ (funções puras) e integration/ (fluxo HTTP + banco de teste)
-│   │       ├── errorHandler.ts
+│   │       ├── errors.ts
 │   │       ├── env.ts         # valida variáveis de ambiente na inicialização
 │   │       └── app.ts
 │   └── web/
@@ -152,7 +155,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
   if (err instanceof NotFoundError) return res.status(404).json({ error: err.message });
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === "P2025") return res.status(404).json({ error: `${err.meta?.modelName} not found.` });
-    if (err.code === "P2002") return res.status(409).json({ error: "..." });
+    if (err.code === "P2002") return res.status(409).json({ error: "..." }); // trecho simplificado
   }
   res.status(500).json({ error: "Internal server error." });
 }
@@ -175,6 +178,16 @@ function getRefreshTokenDeduplicated() {
     refreshTokenPromise = null;
   });
   return refreshTokenPromise;
+}
+```
+
+#### **Proxy via `rewrites` para manter o cookie first-party**
+
+Em produção, front (Vercel) e API (Render) ficam em domínios diferentes, ou seja, cross-site. Nesse cenário um cookie `sameSite: "strict"` não é enviado, e `sameSite: "none"` depende de cookies de terceiros, restritos em Safari e Firefox. Em vez de afrouxar o cookie, o front faz proxy de `/api/*` para o back via `rewrites` do Next: o navegador só conversa com o domínio da Vercel, o refresh token segue `HttpOnly; Secure; SameSite=Strict`, e o CORS deixou de ser necessário.
+
+```ts
+async rewrites() {
+  return [{ source: "/api/:path*", destination: `${API_URL}/:path*` }];
 }
 ```
 
@@ -203,6 +216,23 @@ const lastCareLogRef = useCallback(
 
 O `ref` é reatribuído ao último item da lista a cada render (via callback ref, não `useRef` estático), então o observer sempre aponta para o elemento correto conforme novas páginas chegam.
 
+#### **Cache otimista sem envelope vazado**
+ 
+Mutations de `CareLog` editam diretamente o cache de `["today"]` no `onSuccess`, em vez de esperar um refetch — removendo a ação recém-concluída de `pendingActions` na hora. Isso expôs uma armadilha real: o cache guarda o envelope bruto da resposta (`{ todayOverview: [...] }`), não a lista já "desembrulhada" — uma primeira tentativa de `setQueryData` tratou o cache como array direto e quebrou silenciosamente dentro do callback, fazendo o TanStack Query reportar a mutation inteira como erro mesmo com a chamada de rede já confirmada com sucesso.
+ 
+```ts
+queryClient.setQueryData(["today"], (old: { todayOverview: Planting[] } | undefined) => {
+  if (!old) return old;
+  return {
+    todayOverview: old.todayOverview.map((p) =>
+      p.id === careLog.plantingId
+        ? { ...p, pendingActions: p.pendingActions.filter((a) => a !== careLog.type) }
+        : p,
+    ),
+  };
+});
+```
+
 ---
 
 ## 🧪 Testes
@@ -220,9 +250,9 @@ npm run test:integration    # testes de integração (requer banco de teste no a
 
 ## 🚀 Rodando Localmente
 
-**Pré-requisitos:** Node.js 18+, Docker
+**Pré-requisitos:** Node.js 22+, Docker
 
-```bash
+```bash 
 git clone https://github.com/Drey-1/ceres-garden-manager
 cd ceres-garden-manager
 
@@ -230,8 +260,15 @@ cd ceres-garden-manager
 cd apps/api
 npm install
 cp .env.example .env
-# Configure as variáveis de ambiente de acordo com suas preferências, seguindo o padrão existente
-# Altera a URL do banco de dados no .env de acordo com suas variáveis
+# Configure o seu arquivo .env com o seguinte padrão (substitua os valores conforme necessário):
+# DATABASE_URL="postgresql://postgres:sua_senha@localhost:5433/garden_dev?schema=public"
+# DATABASE_USER=postgres
+# DATABASE_PASSWORD=sua_senha
+# JWT_ACCESS_SECRET=seu_access_secret_super_seguro
+# JWT_REFRESH_SECRET=seu_refresh_secret_super_seguro
+# JWT_ACCESS_EXPIRES_IN=15m
+# JWT_REFRESH_EXPIRES_IN=7d
+# PORT=3001
 docker compose up -d
 npx prisma migrate deploy
 npx prisma generate
@@ -240,6 +277,8 @@ npm run dev
 # Frontend (em outro terminal)
 cd apps/web
 npm install
+cp .env.example .env.local
+# API_URL=http://localhost:3001
 npm run dev
 ```
 
@@ -251,8 +290,8 @@ Acesse [http://localhost:3000](http://localhost:3000)
 
 | Tecnologia | Versão | Papel |
 |---|---|---|
-| [Next.js](https://nextjs.org) | 15 (App Router) | Frontend, roteamento |
-| [TypeScript](https://typescriptlang.org) | 5 | Tipagem estática (front e back) |
+| [Next.js](https://nextjs.org) | 16 (App Router) | Frontend, roteamento |
+| [TypeScript](https://typescriptlang.org) | 7 | Tipagem estática (front e back) |
 | [TanStack Query](https://tanstack.com/query) | v5 | Server state, cache, mutations otimistas |
 | [Tailwind CSS](https://tailwindcss.com) | v4 | Estilização utility-first |
 | [Express](https://expressjs.com) | 5 | API REST |
@@ -263,6 +302,18 @@ Acesse [http://localhost:3000](http://localhost:3000)
 | [Vitest](https://vitest.dev) | v4 | Testes unitários |
 | [Supertest](https://github.com/ladjs/supertest) | — | Testes de integração HTTP |
 | [Biome](https://biomejs.dev) | — | Linter e formatter |
+
+---
+
+## 🌐 Deploy
+
+| Camada | Plataforma |
+|---|---|
+| Frontend | Vercel |
+| API | Render (free) |
+| Banco | Neon (Postgres) |
+
+> A API roda no plano gratuito do Render, que hiberna após alguns minutos de inatividade. O primeiro acesso depois de uma pausa pode levar cerca de um minuto.
 
 ---
 
